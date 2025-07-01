@@ -75,7 +75,7 @@ struct ChangeRequestSheet: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Change Request for Event ID \(event.id)")
+            Text("Change Request for Event ID \(event.idNUM ?? 0)")
                 .font(.headline)
             // TODO: Add your form fields for editing
             HStack(spacing: 12) {
