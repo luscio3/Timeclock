@@ -304,37 +304,68 @@ struct ContentView: View {
     }
 
     func loadRemoteClockEvents() {
-        let threeWeeksAgoMs = Int64(Date()
-            .addingTimeInterval(-3 * 7 * 24 * 3600)
-            .timeIntervalSince1970 * 1000)
-        guard let url = URL(string: "https://altn.cloud/api/get-clock-events.php?since=\(threeWeeksAgoMs)") else { return }
+        // 1. Calculate timestamp for 3 weeks ago (in milliseconds)
+        let threeWeeksAgoMs = Int64(
+            Date()
+                .addingTimeInterval(-3 * 7 * 24 * 3600)
+                .timeIntervalSince1970 * 1000
+        )
+
+        // 2. Build URL
+        guard let url = URL(
+            string: "https://altn.cloud/api/get-clock-events.php?since=\(threeWeeksAgoMs)"
+        ) else { return }
+
+        // 3. Fetch remote events
         URLSession.shared.dataTask(with: url) { data, response, error in
+            // Network error?
             if let error = error {
                 DispatchQueue.main.async {
                     self.errorMessage = "Network error: \(error.localizedDescription)"
                 }
                 return
             }
+
+            // No data?
             guard let data = data else {
                 DispatchQueue.main.async {
                     self.errorMessage = "No data received from server."
                 }
                 return
             }
+
             do {
+                // Decode the JSON into ClockEvent objects
                 let fetchedRemote = try JSONDecoder().decode([ClockEvent].self, from: data)
+
                 DispatchQueue.main.async {
-                    self.remoteEvents = fetchedRemote
+                    // 4. Purge any local events older than 3 weeks
                     storage.deleteAllOlderThan(timestamp: threeWeeksAgoMs)
+
+                    // 5. Merge fetchedRemote into local storage
+                    for remote in fetchedRemote {
+                        let existsLocally = storage.events.contains { $0.idNUM == remote.id }
+                        if !existsLocally {
+                            // Note the `event:` label here to match your API
+                            storage.add(event: remote)
+                        }
+                    }
+
+                    // 6. Update the remoteEvents array for the Clock-In/Out page
                     self.remoteEvents = fetchedRemote
                 }
+
             } catch {
                 DispatchQueue.main.async {
                     self.errorMessage = "Failed to decode remote events."
                 }
             }
-        }.resume()
+        }
+        .resume()
     }
+
+
+
 
     private func mergeRemoteIntoLocal(_ fetchedRemote: [ClockEvent]) {
         for remoteEvent in fetchedRemote {

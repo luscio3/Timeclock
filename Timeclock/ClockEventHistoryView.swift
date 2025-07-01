@@ -1,5 +1,12 @@
 import SwiftUI
 
+// Formatter for weekday names
+private let weekdayFormatter: DateFormatter = {
+  let f = DateFormatter()
+  f.dateFormat = "EEEE"
+  return f
+}()
+
 // MARK: - WeekGroup Model
 /// Represents a week-range of clock events.
 struct WeekGroup: Identifiable {
@@ -121,13 +128,13 @@ struct ClockEventHistoryView: View {
                         Text("\(Self.dateFormatter.string(from: group.startDate)) – " +
                              "\(Self.dateFormatter.string(from: group.endDate))")
                             .font(.headline)
-                        ForEach(group.pairs, id: \.inEvent.id) { pair in
+                        ForEach(group.pairs, id: \.inEvent.timestamp) { pair in
                             let name    = employees.first { $0.id == pair.inEvent.employeeID }?.fullName ?? "Unknown"
                             let inDate  = toDate(pair.inEvent.timestamp)
                             let outDate = pair.outEvent.map { toDate($0.timestamp) }
                             Group {
                                 HStack(spacing: 16) {
-                                    Text(name)
+                                    Text(weekdayFormatter.string(from: inDate))
                                         .frame(width: 120, alignment: .leading)
                                     Text(Self.timeFormatter.string(from: inDate))
                                         .frame(width: 100)
