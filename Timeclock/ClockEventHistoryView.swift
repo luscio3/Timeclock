@@ -16,6 +16,8 @@ struct WeekGroup: Identifiable {
     let pairs: [(inEvent: ClockEvent, outEvent: ClockEvent?)]
 }
 
+
+
 // MARK: - Grouping Logic
 /// Extracts the three most recent weeks (Saturday–Friday) from remote clock events.
 func weeklyGroups(from remoteEvents: [ClockEvent]) -> [WeekGroup] {
